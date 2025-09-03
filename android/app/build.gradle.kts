@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.soko"
+    namespace = "com.sokofiti.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -27,7 +27,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ke.sokofiti.app"
+        applicationId = "com.sokofiti.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -44,7 +44,6 @@ android {
         debug {
             isDebuggable = true
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
 
             // Enable network debugging
