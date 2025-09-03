@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "288767792538",
+    "project_id": "sokofiti-2d6ca",
+    "storage_bucket": "sokofiti-2d6ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288767792538:android:e005df3bd503e76d2b5623",
+        "android_client_info": {
+          "package_name": "com.sokofiti.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqK2VYsRaBG4tgrz5rW2QIArC8JLzit1I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
