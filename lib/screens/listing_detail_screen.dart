@@ -150,39 +150,79 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
         _errorMessage = null;
       });
 
+      final listingId = widget.listing['id'].toString();
+      debugPrint('Loading listing details for ID: $listingId');
+
       final response = await http
           .get(
-            Uri.parse('${Api.baseUrl}${Api.getListingEndpoint}').replace(
-              queryParameters: {'listing_id': widget.listing['id'].toString()},
-            ),
+            Uri.parse(
+              '${Api.baseUrl}${Api.getListingEndpoint}',
+            ).replace(queryParameters: {'listing_id': listingId}),
             headers: Api.headers,
           )
           .timeout(Api.timeout);
 
+      debugPrint('Listing detail response status: ${response.statusCode}');
+      debugPrint('Listing detail response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          // Get the first listing from the listings array
-          final listings = data['listings'] as List;
-          if (listings.isNotEmpty) {
+          // Handle different response formats
+          if (data.containsKey('listing') && data['listing'] != null) {
+            // Single listing format
             setState(() {
-              _detailedListing = listings.first;
+              _detailedListing = data['listing'];
               _isFavorite = data['is_favorite'] ?? false;
               _isLoading = false;
             });
+          } else if (data.containsKey('listings') && data['listings'] is List) {
+            // Listings array format
+            final listings = data['listings'] as List;
+            if (listings.isNotEmpty) {
+              setState(() {
+                _detailedListing = listings.first;
+                _isFavorite = data['is_favorite'] ?? false;
+                _isLoading = false;
+              });
+            } else {
+              throw Exception('No listing found');
+            }
           } else {
-            throw Exception('No listing found');
+            // Fallback: use the original listing data
+            debugPrint('Using fallback listing data');
+            setState(() {
+              _detailedListing = widget.listing;
+              _isFavorite = false;
+              _isLoading = false;
+            });
           }
         } else {
-          throw Exception(data['error'] ?? 'Failed to load listing details');
+          throw Exception(
+            data['error'] ??
+                data['message'] ??
+                'Failed to load listing details',
+          );
         }
+      } else if (response.statusCode == 404) {
+        // Listing not found, use original data
+        debugPrint('Listing not found on server, using original data');
+        setState(() {
+          _detailedListing = widget.listing;
+          _isFavorite = false;
+          _isLoading = false;
+        });
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
+      debugPrint('Error loading listing details: $e');
+      // Fallback to using the original listing data
       setState(() {
+        _detailedListing = widget.listing;
+        _isFavorite = false;
         _isLoading = false;
-        _errorMessage = e.toString();
+        _errorMessage = null; // Don't show error, just use fallback
       });
     }
   }

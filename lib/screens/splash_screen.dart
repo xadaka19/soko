@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:io';
 import '../widgets/sokofiti_logo.dart';
-import '../services/google_auth_service.dart';
 import '../services/crash_reporting_service.dart';
-import '../utils/session_manager.dart';
 import '../widgets/ellipsis_loader.dart';
 import 'navigation.dart';
 
@@ -95,36 +92,12 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToMainApp() async {
-    try {
-      // Try Google One Tap sign-in on Android (skip on web for now)
-      if (Platform.isAndroid) {
-        CrashReportingService.addBreadcrumb(
-          'Attempting Google One Tap sign-in',
-        );
+    // Skip automatic Google sign-in to allow users to go directly to homepage
+    // Users can manually sign in later if they want to access protected features
 
-        final result = await GoogleAuthService.signInWithGoogle();
-        if (result['success'] == true) {
-          CrashReportingService.addBreadcrumb(
-            'Google One Tap sign-in successful',
-          );
-          // User is now signed in, save session
-          if (result['user'] != null) {
-            await SessionManager.saveUser(result['user']);
-            if (result['token'] != null) {
-              await SessionManager.saveToken(result['token']);
-            }
-          }
-        } else {
-          CrashReportingService.addBreadcrumb(
-            'Google One Tap sign-in failed: ${result['message']}',
-          );
-        }
-      }
-    } catch (e) {
-      // Silent fail - don't block app startup
-      CrashReportingService.addBreadcrumb('Google One Tap error: $e');
-      debugPrint('Google One Tap error: $e');
-    }
+    CrashReportingService.addBreadcrumb(
+      'Navigating to main app without forced login',
+    );
 
     // Always navigate to home screen with bottom navigation
     // Authentication will be handled per tab as needed

@@ -4,10 +4,12 @@ import 'package:http/http.dart' as http;
 import '../services/firebase_service.dart';
 import '../widgets/plan_badge.dart';
 import '../widgets/ellipsis_loader.dart';
+import '../widgets/smart_search_widget.dart';
 import '../utils/image_utils.dart';
 import '../config/api.dart';
 import 'listing_detail_screen.dart';
 import 'category_screen.dart';
+import 'search_results_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -473,32 +475,15 @@ class _HomeScreenState extends State<HomeScreen> {
           preferredSize: const Size.fromHeight(60),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for items...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch('');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-              onSubmitted: _onSearch,
+            child: SmartSearchWidget(
+              onSearchSubmitted: (query) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SearchResultsScreen(query: query),
+                  ),
+                );
+              },
             ),
           ),
         ),

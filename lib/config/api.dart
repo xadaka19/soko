@@ -57,6 +57,35 @@ class Api {
       ? '/get-seller-listings.php'
       : '/api/get-seller-listings.php';
 
+  // Search endpoints
+  static String get searchEndpoint =>
+      _baseUrlHasApi ? '/search.php' : '/api/search.php';
+  static String get smartSearchEndpoint => _baseUrlHasApi
+      ? '/search/smart-search.php'
+      : '/api/search/smart-search.php';
+  static String get autocompleteEndpoint => _baseUrlHasApi
+      ? '/search/autocomplete.php'
+      : '/api/search/autocomplete.php';
+  static String get searchHistoryEndpoint =>
+      _baseUrlHasApi ? '/search/history.php' : '/api/search/history.php';
+  static String get trendingSearchEndpoint =>
+      _baseUrlHasApi ? '/search/trending.php' : '/api/search/trending.php';
+  static String get categorySuggestionsEndpoint => _baseUrlHasApi
+      ? '/search/category-suggestions.php'
+      : '/api/search/category-suggestions.php';
+  static String get saveSearchHistoryEndpoint => _baseUrlHasApi
+      ? '/search/save-history.php'
+      : '/api/search/save-history.php';
+  static String get getSearchHistoryEndpoint => _baseUrlHasApi
+      ? '/search/get-history.php'
+      : '/api/search/get-history.php';
+  static String get popularCategoriesEndpoint => _baseUrlHasApi
+      ? '/search/popular-categories.php'
+      : '/api/search/popular-categories.php';
+  static String get trackInteractionEndpoint => _baseUrlHasApi
+      ? '/search/track-interaction.php'
+      : '/api/search/track-interaction.php';
+
   // Request timeout
   static const Duration timeout = Duration(seconds: 30);
 

@@ -4,24 +4,24 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api.dart';
 import '../utils/session_manager.dart';
+import 'fallback_search_service.dart';
 
 class SmartSearchService {
   static const String _localSearchHistoryKey = 'local_search_history';
   static const int _maxLocalHistory = 20;
 
   /// Get autocomplete suggestions
-  static Future<List<Map<String, dynamic>>> getAutocompleteSuggestions(String query) async {
+  static Future<List<Map<String, dynamic>>> getAutocompleteSuggestions(
+    String query,
+  ) async {
     if (query.length < 2) return [];
 
     try {
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/autocomplete.php'),
+            Uri.parse('${Api.baseUrl}${Api.autocompleteEndpoint}'),
             headers: Api.headers,
-            body: jsonEncode({
-              'query': query,
-              'limit': 10,
-            }),
+            body: jsonEncode({'query': query, 'limit': 10}),
           )
           .timeout(Api.timeout);
 
@@ -30,11 +30,19 @@ class SmartSearchService {
         if (data['success']) {
           return List<Map<String, dynamic>>.from(data['suggestions'] ?? []);
         }
+      } else if (response.statusCode == 404) {
+        // Autocomplete endpoint not available, use fallback
+        return await FallbackSearchService.getBasicSuggestions(query);
       }
       return [];
     } catch (e) {
-      debugPrint('Autocomplete suggestions error: $e');
-      return [];
+      debugPrint('Autocomplete suggestions error: $e, trying fallback');
+      try {
+        return await FallbackSearchService.getBasicSuggestions(query);
+      } catch (fallbackError) {
+        debugPrint('Fallback suggestions also failed: $fallbackError');
+        return [];
+      }
     }
   }
 
@@ -48,7 +56,7 @@ class SmartSearchService {
     try {
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/category-suggestions.php'),
+            Uri.parse('${Api.baseUrl}${Api.categorySuggestionsEndpoint}'),
             headers: Api.headers,
             body: jsonEncode({
               'query': query,
@@ -76,7 +84,7 @@ class SmartSearchService {
     try {
       final response = await http
           .get(
-            Uri.parse('${Api.baseUrl}/api/search/trending.php'),
+            Uri.parse('${Api.baseUrl}${Api.trendingSearchEndpoint}'),
             headers: Api.headers,
           )
           .timeout(Api.timeout);
@@ -101,18 +109,18 @@ class SmartSearchService {
     try {
       final prefs = await SharedPreferences.getInstance();
       List<String> history = prefs.getStringList(_localSearchHistoryKey) ?? [];
-      
+
       // Remove if already exists to avoid duplicates
       history.remove(query);
-      
+
       // Add to beginning
       history.insert(0, query);
-      
+
       // Limit history size
       if (history.length > _maxLocalHistory) {
         history = history.take(_maxLocalHistory).toList();
       }
-      
+
       await prefs.setStringList(_localSearchHistoryKey, history);
     } catch (e) {
       debugPrint('Save to local history error: $e');
@@ -148,7 +156,7 @@ class SmartSearchService {
 
       await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/save-history.php'),
+            Uri.parse('${Api.baseUrl}${Api.saveSearchHistoryEndpoint}'),
             headers: Api.headers,
             body: jsonEncode({
               'user_id': user['id'],
@@ -170,7 +178,7 @@ class SmartSearchService {
 
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/get-history.php'),
+            Uri.parse('${Api.baseUrl}${Api.getSearchHistoryEndpoint}'),
             headers: Api.headers,
             body: jsonEncode({
               'user_id': user['id'],
@@ -194,7 +202,9 @@ class SmartSearchService {
   }
 
   /// Get combined search suggestions (autocomplete + history + trending)
-  static Future<Map<String, List<dynamic>>> getCombinedSuggestions(String query) async {
+  static Future<Map<String, List<dynamic>>> getCombinedSuggestions(
+    String query,
+  ) async {
     try {
       // Get all suggestions concurrently
       final futures = await Future.wait([
@@ -258,7 +268,7 @@ class SmartSearchService {
 
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/smart-search.php'),
+            Uri.parse('${Api.baseUrl}${Api.smartSearchEndpoint}'),
             headers: Api.headers,
             body: jsonEncode({
               'query': query,
@@ -288,19 +298,39 @@ class SmartSearchService {
         } else {
           throw Exception(data['message'] ?? 'Search failed');
         }
+      } else if (response.statusCode == 404) {
+        // Smart search endpoint not available, use fallback
+        debugPrint('Smart search not available, using fallback search');
+        return await FallbackSearchService.performBasicSearch(
+          query: query,
+          categoryId: categoryId,
+          page: page,
+          limit: limit,
+        );
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Smart search error: $e');
-      return {
-        'listings': [],
-        'total_count': 0,
-        'has_more': false,
-        'search_time': 0,
-        'suggestions': [],
-        'filters': {},
-      };
+      debugPrint('Smart search error: $e, trying fallback search');
+      // Try fallback search on any error
+      try {
+        return await FallbackSearchService.performBasicSearch(
+          query: query,
+          categoryId: categoryId,
+          page: page,
+          limit: limit,
+        );
+      } catch (fallbackError) {
+        debugPrint('Fallback search also failed: $fallbackError');
+        return {
+          'listings': [],
+          'total_count': 0,
+          'has_more': false,
+          'search_time': 0,
+          'suggestions': [],
+          'filters': {},
+        };
+      }
     }
   }
 
@@ -314,10 +344,7 @@ class SmartSearchService {
           .post(
             Uri.parse('${Api.baseUrl}/api/admin/search-analytics.php'),
             headers: Api.headers,
-            body: jsonEncode({
-              'admin_id': user['id'],
-              'token': user['token'],
-            }),
+            body: jsonEncode({'admin_id': user['id'], 'token': user['token']}),
           )
           .timeout(Api.timeout);
 
@@ -349,7 +376,7 @@ class SmartSearchService {
     try {
       final response = await http
           .get(
-            Uri.parse('${Api.baseUrl}/api/search/popular-categories.php'),
+            Uri.parse('${Api.baseUrl}${Api.popularCategoriesEndpoint}'),
             headers: Api.headers,
           )
           .timeout(Api.timeout);
@@ -376,10 +403,10 @@ class SmartSearchService {
   }) async {
     try {
       final user = await SessionManager.getUser();
-      
+
       await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/search/track-interaction.php'),
+            Uri.parse('${Api.baseUrl}${Api.trackInteractionEndpoint}'),
             headers: Api.headers,
             body: jsonEncode({
               'user_id': user?['id'],

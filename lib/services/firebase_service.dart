@@ -99,6 +99,11 @@ class FirebaseService {
 
       // Save FCM token for the user
       await _saveFCMToken();
+
+      // Show welcome notification if permissions were granted
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        await _showWelcomeNotification();
+      }
     } catch (e) {
       debugPrint('Error requesting notification permissions: $e');
     }
@@ -420,6 +425,50 @@ class FirebaseService {
     debugPrint('Setting crash user info for: $userId');
     if (customKeys != null) {
       debugPrint('Custom keys: $customKeys');
+    }
+  }
+
+  /// Show welcome notification after permissions are granted
+  static Future<void> _showWelcomeNotification() async {
+    try {
+      if (_localNotifications == null) return;
+
+      // Delay to ensure the app is fully loaded
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Create notification details
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'sokofiti_welcome',
+            'Welcome Notifications',
+            channelDescription: 'Welcome notifications for new users',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          );
+
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      // Show welcome notification
+      await _localNotifications!.show(
+        999,
+        '🎉 Welcome to Sokofiti!',
+        'Notifications are now enabled. You\'ll get updates about new listings, messages, and more.',
+        notificationDetails,
+      );
+
+      debugPrint('Welcome notification sent');
+    } catch (e) {
+      debugPrint('Error showing welcome notification: $e');
     }
   }
 

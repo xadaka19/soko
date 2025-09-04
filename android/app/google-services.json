@@ -12,7 +12,20 @@
           "package_name": "com.sokofiti.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "288767792538-8g7ocuo0m3kjoi60rs7ir05t1ukpq1bg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sokofiti.app",
+            "certificate_hash": "79e2fdde0bd232752da32b538bd116b6b2262e79"
+          }
+        },
+        {
+          "client_id": "288767792538-5p2tlebpnbig2593tiel6be5qdnmssop.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAqK2VYsRaBG4tgrz5rW2QIArC8JLzit1I"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "288767792538-5p2tlebpnbig2593tiel6be5qdnmssop.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
