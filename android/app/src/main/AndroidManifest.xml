@@ -16,7 +16,11 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="${usesCleartextTraffic}"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:allowBackup="${allowBackup}"
+        android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
+        android:largeHeap="true"
+        android:hardwareAccelerated="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

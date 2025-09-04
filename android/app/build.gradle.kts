@@ -28,8 +28,8 @@ android {
 
     defaultConfig {
         applicationId = "com.sokofiti.app"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21  // Android 5.0 (API level 21)
+        targetSdk = 33  // Android 13 (API level 33) - more compatible
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
@@ -38,6 +38,10 @@ android {
 
         // Add network security config for debug builds
         manifestPlaceholders["usesCleartextTraffic"] = "true"
+
+        // Add compatibility flags
+        manifestPlaceholders["allowBackup"] = "true"
+        manifestPlaceholders["requestLegacyExternalStorage"] = "true"
     }
 
     buildTypes {

@@ -1,4 +1,4 @@
-package com.example.soko
+package com.sokofiti.app
 
 import io.flutter.embedding.android.FlutterActivity
 
