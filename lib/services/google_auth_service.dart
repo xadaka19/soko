@@ -236,9 +236,13 @@ class GoogleAuthService {
     Map<String, dynamic> googleUserData,
   ) async {
     try {
+      final url = '${Api.baseUrl}${Api.googleAuthEndpoint}';
+      debugPrint('Authenticating with backend: $url');
+      debugPrint('User data: ${googleUserData['email']}');
+
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}${Api.googleAuthEndpoint}'),
+            Uri.parse(url),
             headers: Api.headers,
             body: jsonEncode({
               'id_token': idToken,
@@ -251,10 +255,14 @@ class GoogleAuthService {
           )
           .timeout(Api.timeout);
 
+      debugPrint('Backend response status: ${response.statusCode}');
+      debugPrint('Backend response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data;
       } else {
+        debugPrint('Backend error: ${response.statusCode} - ${response.body}');
         return {
           'success': false,
           'message': 'Server error: ${response.statusCode}',

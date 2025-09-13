@@ -74,7 +74,7 @@ class _RegisterModalState extends State<RegisterModal>
     setState(() => _isLoading = true);
 
     try {
-      final success = await AuthService.register(
+      final result = await AuthService.register(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
@@ -82,7 +82,7 @@ class _RegisterModalState extends State<RegisterModal>
         password: _passwordController.text,
       );
 
-      if (success) {
+      if (result['success'] == true) {
         if (mounted) {
           Navigator.of(context).pop();
           widget.onRegistrationSuccess?.call();
@@ -90,8 +90,10 @@ class _RegisterModalState extends State<RegisterModal>
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration failed. Please try again.'),
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Registration failed. Please try again.',
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -154,12 +156,14 @@ class _RegisterModalState extends State<RegisterModal>
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+    final isMobile = screenWidth < 600;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screenWidth > 600 ? 40 : 16,
-        vertical: screenHeight > 700 ? 20 : 10,
+        horizontal: isMobile ? 20 : 40,
+        vertical: isSmallScreen ? 20 : 40,
       ),
       child: AnimatedBuilder(
         animation: _animationController,
@@ -170,12 +174,14 @@ class _RegisterModalState extends State<RegisterModal>
               opacity: _fadeAnimation.value,
               child: Container(
                 constraints: BoxConstraints(
-                  maxWidth: screenWidth > 600 ? 400 : screenWidth * 0.9,
-                  maxHeight: screenHeight * 0.9,
+                  maxWidth: isMobile ? screenWidth * 0.92 : 400,
+                  maxHeight: isSmallScreen
+                      ? screenHeight * 0.85
+                      : screenHeight * 0.75,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.1),
@@ -185,7 +191,7 @@ class _RegisterModalState extends State<RegisterModal>
                   ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(isMobile ? 16 : 20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -203,71 +209,89 @@ class _RegisterModalState extends State<RegisterModal>
                       ),
 
                       // Logo and title
-                      const SokofitiLogo(
-                        size: 50,
-                        backgroundColor: Color(0xFF5BE206),
+                      SokofitiLogo(
+                        size: isMobile ? 40 : 50,
+                        backgroundColor: const Color(0xFF5BE206),
                         borderRadius: 15,
                         showShadow: false,
                         useWhiteLogo: true,
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
+                      SizedBox(height: isMobile ? 8 : 10),
+                      Text(
                         'Join Sokofiti!',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: isMobile ? 18 : 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF5BE206),
+                          color: const Color(0xFF5BE206),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: isMobile ? 4 : 6),
                       Text(
                         'Create your account',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: isMobile ? 13 : 14,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: isMobile ? 12 : 16),
 
                       if (!_showEmailForm) ...[
                         // Google Sign-In Button
                         SizedBox(
                           width: double.infinity,
-                          height: 46,
+                          height: isMobile ? 44 : 46,
                           child: OutlinedButton.icon(
-                            onPressed: _isGoogleLoading ? null : _signInWithGoogle,
+                            onPressed: _isGoogleLoading
+                                ? null
+                                : _signInWithGoogle,
                             icon: _isGoogleLoading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Image.asset(
                                     'assets/icons/google_icon.png',
                                     width: 18,
                                     height: 18,
                                     errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(Icons.g_mobiledata, size: 18);
+                                      return const Icon(
+                                        Icons.g_mobiledata,
+                                        size: 18,
+                                      );
                                     },
                                   ),
                             label: Text(
-                              _isGoogleLoading ? 'Signing up...' : 'Continue with Google',
-                              style: const TextStyle(fontSize: 14),
+                              _isGoogleLoading
+                                  ? 'Signing up...'
+                                  : 'Continue with Google',
+                              style: TextStyle(fontSize: isMobile ? 13 : 14),
                             ),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: Colors.grey.shade300),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  isMobile ? 10 : 12,
+                                ),
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 12),
+                        SizedBox(height: isMobile ? 10 : 12),
 
                         // Divider
                         Row(
                           children: [
-                            Expanded(child: Divider(color: Colors.grey.shade300)),
+                            Expanded(
+                              child: Divider(color: Colors.grey.shade300),
+                            ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 'or',
                                 style: TextStyle(
@@ -277,7 +301,9 @@ class _RegisterModalState extends State<RegisterModal>
                                 ),
                               ),
                             ),
-                            Expanded(child: Divider(color: Colors.grey.shade300)),
+                            Expanded(
+                              child: Divider(color: Colors.grey.shade300),
+                            ),
                           ],
                         ),
 
@@ -288,7 +314,8 @@ class _RegisterModalState extends State<RegisterModal>
                           width: double.infinity,
                           height: 46,
                           child: ElevatedButton(
-                            onPressed: () => setState(() => _showEmailForm = true),
+                            onPressed: () =>
+                                setState(() => _showEmailForm = true),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF5BE206),
                               foregroundColor: Colors.white,
@@ -298,7 +325,10 @@ class _RegisterModalState extends State<RegisterModal>
                             ),
                             child: const Text(
                               'Sign up with Email',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -317,14 +347,18 @@ class _RegisterModalState extends State<RegisterModal>
                                       decoration: InputDecoration(
                                         labelText: 'First Name',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 12,
-                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 12,
+                                            ),
                                       ),
-                                      validator: (value) => value?.isEmpty == true
+                                      validator: (value) =>
+                                          value?.isEmpty == true
                                           ? 'Required'
                                           : null,
                                     ),
@@ -336,14 +370,18 @@ class _RegisterModalState extends State<RegisterModal>
                                       decoration: InputDecoration(
                                         labelText: 'Last Name',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 12,
-                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 12,
+                                            ),
                                       ),
-                                      validator: (value) => value?.isEmpty == true
+                                      validator: (value) =>
+                                          value?.isEmpty == true
                                           ? 'Required'
                                           : null,
                                     ),
@@ -401,7 +439,8 @@ class _RegisterModalState extends State<RegisterModal>
                                           : Icons.visibility_off_outlined,
                                     ),
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                   ),
                                   border: OutlineInputBorder(
@@ -439,12 +478,17 @@ class _RegisterModalState extends State<RegisterModal>
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : const Text(
                                     'Create Account',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                           ),
                         ),
@@ -453,7 +497,8 @@ class _RegisterModalState extends State<RegisterModal>
 
                         // Back to options
                         TextButton(
-                          onPressed: () => setState(() => _showEmailForm = false),
+                          onPressed: () =>
+                              setState(() => _showEmailForm = false),
                           child: const Text(
                             'Back to sign-up options',
                             style: TextStyle(fontSize: 12),
@@ -467,9 +512,14 @@ class _RegisterModalState extends State<RegisterModal>
                       RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
-                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
                           children: [
-                            const TextSpan(text: 'By continuing, you agree to our '),
+                            const TextSpan(
+                              text: 'By continuing, you agree to our ',
+                            ),
                             TextSpan(
                               text: 'Terms of Use',
                               style: const TextStyle(
@@ -481,7 +531,8 @@ class _RegisterModalState extends State<RegisterModal>
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const TermsOfUseScreen(),
+                                      builder: (context) =>
+                                          const TermsOfUseScreen(),
                                     ),
                                   );
                                 },
@@ -498,7 +549,8 @@ class _RegisterModalState extends State<RegisterModal>
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const PrivacyPolicyScreen(),
+                                      builder: (context) =>
+                                          const PrivacyPolicyScreen(),
                                     ),
                                   );
                                 },
@@ -515,7 +567,10 @@ class _RegisterModalState extends State<RegisterModal>
                         children: [
                           Text(
                             'Already have an account? ',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.of(context).pop(),

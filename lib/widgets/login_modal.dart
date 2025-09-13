@@ -164,12 +164,14 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+    final isMobile = screenWidth < 600;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screenWidth > 600 ? 40 : 16,
-        vertical: screenHeight > 700 ? 40 : 20,
+        horizontal: isMobile ? 20 : 40,
+        vertical: isSmallScreen ? 20 : 40,
       ),
       child: AnimatedBuilder(
         animation: _animationController,
@@ -180,12 +182,14 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
               opacity: _fadeAnimation.value,
               child: Container(
                 constraints: BoxConstraints(
-                  maxWidth: screenWidth > 600 ? 400 : screenWidth * 0.9,
-                  maxHeight: screenHeight * 0.85,
+                  maxWidth: isMobile ? screenWidth * 0.92 : 400,
+                  maxHeight: isSmallScreen
+                      ? screenHeight * 0.75
+                      : screenHeight * 0.65,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.1),
@@ -195,7 +199,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                   ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(isMobile ? 16 : 20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -213,33 +217,36 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                       ),
 
                       // Logo and title
-                      const SokofitiLogo(
-                        size: 60,
-                        backgroundColor: Color(0xFF5BE206),
+                      SokofitiLogo(
+                        size: isMobile ? 45 : 60,
+                        backgroundColor: const Color(0xFF5BE206),
                         borderRadius: 15,
                         showShadow: false,
                         useWhiteLogo: true,
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
+                      SizedBox(height: isMobile ? 10 : 12),
+                      Text(
                         'Welcome Back!',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: isMobile ? 20 : 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF5BE206),
+                          color: const Color(0xFF5BE206),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: isMobile ? 4 : 6),
                       Text(
                         'Sign in to continue',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: isMobile ? 13 : 14,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: isMobile ? 16 : 20),
 
                       // Google Sign-In Button
                       SizedBox(
                         width: double.infinity,
-                        height: 46,
+                        height: isMobile ? 44 : 46,
                         child: OutlinedButton.icon(
                           onPressed: _isGoogleLoading
                               ? null

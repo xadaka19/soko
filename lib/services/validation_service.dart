@@ -78,4 +78,37 @@ class ValidationService {
 
     return phone; // Return original if format is unclear
   }
+
+  /// Validate email for form validation
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your email';
+    }
+    if (!isValidEmail(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null;
+  }
+
+  /// Validate phone number for form validation
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+    if (!isValidKenyanPhone(value)) {
+      return 'Please enter a valid Kenyan phone number';
+    }
+    return null;
+  }
+
+  /// Validate password for form validation
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long';
+    }
+    return null;
+  }
 }

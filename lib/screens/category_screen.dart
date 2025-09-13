@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../services/firebase_service.dart';
 import '../utils/image_utils.dart';
@@ -16,22 +17,59 @@ class CategoryScreen extends StatefulWidget {
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
 
-class _CategoryScreenState extends State<CategoryScreen> {
+class _CategoryScreenState extends State<CategoryScreen>
+    with WidgetsBindingObserver {
   List<dynamic> _subcategories = [];
   List<dynamic> _listings = [];
   bool _isLoading = true;
   bool _showSubcategories = true;
   String? _currentSubcategoryName;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     debugPrint(
       'CategoryScreen initialized for category: ${widget.category['name']}',
     );
     debugPrint('Category ID: ${widget.category['id']}');
     _loadSubcategories();
+    _startAutoRefresh();
     FirebaseService.trackScreenView('category_screen');
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh data when app comes back to foreground
+      if (_showSubcategories) {
+        _loadSubcategories();
+      } else {
+        _loadListings();
+      }
+    }
+  }
+
+  void _startAutoRefresh() {
+    // Refresh data every 15 minutes to keep it up-to-date
+    _refreshTimer = Timer.periodic(const Duration(minutes: 15), (timer) {
+      if (mounted) {
+        if (_showSubcategories) {
+          _loadSubcategories();
+        } else {
+          _loadListings();
+        }
+      }
+    });
   }
 
   Future<void> _loadSubcategories() async {
@@ -154,6 +192,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
         _listings = [];
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    if (_showSubcategories) {
+      await _loadSubcategories();
+    } else {
+      await _loadListings();
     }
   }
 
@@ -346,101 +392,109 @@ class _CategoryScreenState extends State<CategoryScreen> {
       ),
       body: _isLoading
           ? const Center(child: BouncingEllipsisLoader())
-          : _showSubcategories
-          ? _subcategories.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.category_outlined,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No subcategories available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: _showSubcategories
+                  ? _subcategories.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.category_outlined,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No subcategories available',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'This category doesn\'t have any subcategories. You can browse listings directly.',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showSubcategories = false;
+                                      });
+                                      _loadListings();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5BE206),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Browse Listings'),
+                                  ),
+                                ],
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'This category doesn\'t have any subcategories. You can browse listings directly.',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _showSubcategories = false;
-                              });
-                              _loadListings();
+                          )
+                        : ListView.builder(
+                            itemCount: _subcategories.length,
+                            itemBuilder: (context, index) {
+                              return _buildSubcategoryCard(
+                                _subcategories[index],
+                              );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5BE206),
-                              foregroundColor: Colors.white,
+                          )
+                  : _listings.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inbox_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                            child: const Text('Browse Listings'),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            Text(
+                              _currentSubcategoryName != null
+                                  ? 'No listings available in $_currentSubcategoryName'
+                                  : 'No listings found in this category',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _currentSubcategoryName != null
+                                  ? 'This subcategory doesn\'t have any listings yet. Try browsing other subcategories or check back later.'
+                                  : 'This category doesn\'t have any listings yet. Try browsing other categories or check back later.',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: _listings.length,
+                      itemBuilder: (context, index) {
+                        return _buildListingCard(_listings[index]);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: _subcategories.length,
-                    itemBuilder: (context, index) {
-                      return _buildSubcategoryCard(_subcategories[index]);
-                    },
-                  )
-          : _listings.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.inbox_outlined,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _currentSubcategoryName != null
-                          ? 'No listings available in $_currentSubcategoryName'
-                          : 'No listings found in this category',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _currentSubcategoryName != null
-                          ? 'This subcategory doesn\'t have any listings yet. Try browsing other subcategories or check back later.'
-                          : 'This category doesn\'t have any listings yet. Try browsing other categories or check back later.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              itemCount: _listings.length,
-              itemBuilder: (context, index) {
-                return _buildListingCard(_listings[index]);
-              },
             ),
     );
   }

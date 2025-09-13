@@ -1,6 +1,6 @@
 <?php
 /**
- * Test Listings API - Returns sample data for testing
+ * Test Listings API - Returns sample data for testing with real-time timestamps
  * URL: /api/test-listings.php
  * Method: GET
  */
@@ -10,12 +10,16 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// Generate current timestamp for real-time testing
+$current_time = date('Y-m-d H:i:s');
+$timestamp = time();
+
 // Sample listings data for testing
 $sample_listings = [
     [
         'id' => 1,
-        'title' => 'iPhone 13 Pro Max 256GB',
-        'description' => 'Excellent condition iPhone 13 Pro Max with 256GB storage. Comes with original box and charger.',
+        'title' => "iPhone 13 Pro Max 256GB - Updated $current_time",
+        'description' => "Excellent condition iPhone 13 Pro Max with 256GB storage. Last updated at $current_time to test real-time sync.",
         'price' => 85000,
         'formatted_price' => 'KES 85,000',
         'category_id' => 1,
@@ -28,8 +32,9 @@ $sample_listings = [
         'image' => 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
         'image_count' => 3,
         'seller_name' => 'John Doe',
-        'created_at' => '2024-01-15 10:30:00',
-        'updated_at' => '2024-01-15 14:35:00',
+        'created_at' => $current_time,
+        'updated_at' => $current_time,
+        'timestamp' => $timestamp,
         'plan' => 'premium'
     ],
     [

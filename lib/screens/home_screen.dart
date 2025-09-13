@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/firebase_service.dart';
@@ -18,7 +19,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<dynamic> _listings = [];
   bool _isLoading = true;
 
@@ -26,19 +27,43 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _categories = [];
 
   final String baseUrl = 'https://sokofiti.ke';
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadListings();
     _loadCategories();
+    _startAutoRefresh();
 
     FirebaseService.trackScreenView('home_screen');
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh listings when app comes back to foreground
+      _loadListings();
+      _loadCategories();
+    }
+  }
+
+  void _startAutoRefresh() {
+    // Refresh listings every 10 minutes to keep them up-to-date
+    _refreshTimer = Timer.periodic(const Duration(minutes: 10), (timer) {
+      if (mounted) {
+        _loadListings();
+      }
+    });
   }
 
   Future<void> _loadListings() async {
