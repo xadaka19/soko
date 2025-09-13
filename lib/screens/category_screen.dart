@@ -166,7 +166,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final cleanIconName = iconName
         .replaceAll('.png', '')
         .replaceAll('.jpg', '');
-    final assetPath = 'images/categories/$cleanIconName.png';
+    final assetPath = 'assets/images/categories/$cleanIconName.png';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),

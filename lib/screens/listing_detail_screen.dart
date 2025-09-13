@@ -332,7 +332,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   radius: 24,
                   backgroundColor: const Color(0xFF5BE206),
                   child: Text(
-                    (listing['seller_name'] ?? 'U')[0].toUpperCase(),
+                    _getSellerInitial(listing['seller_name']),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -1437,7 +1437,7 @@ https://sokofiti.ke/listing/$listingId''';
                 radius: 24,
                 backgroundColor: const Color(0xFF5BE206),
                 child: Text(
-                  (listing['seller_name'] ?? 'U')[0].toUpperCase(),
+                  _getSellerInitial(listing['seller_name']),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -2286,5 +2286,14 @@ What's your last price for this item?
               ),
             ),
     );
+  }
+
+  /// Get seller initial safely, handling empty or null names
+  String _getSellerInitial(dynamic sellerName) {
+    final name = sellerName?.toString() ?? '';
+    if (name.isEmpty) {
+      return 'U'; // Default to 'U' for User
+    }
+    return name[0].toUpperCase();
   }
 }

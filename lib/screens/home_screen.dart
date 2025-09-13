@@ -21,8 +21,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> _listings = [];
   bool _isLoading = true;
-  String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
 
   // Categories data - will be loaded from API
   List<dynamic> _categories = [];
@@ -40,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -48,8 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final url =
-          '${Api.baseUrl}${Api.getListingsEndpoint}${_searchQuery.isNotEmpty ? '?search=${Uri.encodeComponent(_searchQuery)}' : ''}';
+      final url = '${Api.baseUrl}${Api.getListingsEndpoint}';
       debugPrint('Loading listings from: $url');
 
       final response = await http
@@ -69,25 +65,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final normalized = data.map((item) {
             try {
-              final photo = item['image']?.toString() ?? '';
-              final baseUrl = 'https://sokofiti.ke';
-              final imageUrl = photo.isNotEmpty
-                  ? (photo.startsWith('http')
-                        ? photo
-                        : '$baseUrl/${photo.replaceFirst(RegExp(r'^/'), '')}')
-                  : '';
+              // Handle multiple image formats
+              String imageUrl = '';
+              if (item['image'] != null &&
+                  item['image'].toString().isNotEmpty) {
+                imageUrl = ImageUtils.normalizeImageUrl(
+                  item['image'].toString(),
+                );
+              } else if (item['images'] != null &&
+                  item['images'] is List &&
+                  (item['images'] as List).isNotEmpty) {
+                imageUrl = ImageUtils.normalizeImageUrl(
+                  (item['images'] as List).first.toString(),
+                );
+              }
 
               return {
                 'id': item['id']?.toString() ?? '0',
                 'title': item['title']?.toString() ?? 'No Title',
                 'description': item['description']?.toString() ?? '',
                 'price': item['price']?.toString() ?? '0',
+                'formatted_price':
+                    item['formatted_price']?.toString() ??
+                    'KES ${item['price'] ?? '0'}',
                 'image': imageUrl,
+                'images':
+                    item['images'] ?? (imageUrl.isNotEmpty ? [imageUrl] : []),
                 'location': item['location']?.toString() ?? '',
+                'city': item['city']?.toString() ?? '',
+                'county': item['county']?.toString() ?? '',
                 'plan': item['plan']?.toString() ?? 'free',
-                'condition':
-                    item['condition']?.toString() ??
-                    'used', // brand new or used
+                'condition': item['condition']?.toString() ?? 'used',
+                'category': item['category']?.toString() ?? '',
+                'category_id': item['category_id']?.toString() ?? '',
+                'seller_name': item['seller_name']?.toString() ?? '',
+                'views': item['views']?.toString() ?? '0',
+                'created_at': item['created_at']?.toString() ?? '',
+                'updated_at': item['updated_at']?.toString() ?? '',
               };
             } catch (e) {
               debugPrint('Error processing listing item: $e');
@@ -96,10 +110,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 'title': 'Error Loading Item',
                 'description': '',
                 'price': '0',
+                'formatted_price': 'KES 0',
                 'image': '',
+                'images': [],
                 'location': '',
+                'city': '',
+                'county': '',
                 'plan': 'free',
                 'condition': 'used',
+                'category': '',
+                'category_id': '',
+                'seller_name': '',
+                'views': '0',
+                'created_at': '',
+                'updated_at': '',
               };
             }
           }).toList();
@@ -162,21 +186,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onRefresh() async => _loadListings();
 
-  void _onSearch(String query) {
-    setState(() => _searchQuery = query);
-    _loadListings();
-  }
+  Widget _buildCategoryImage(Map<String, dynamic> category) {
+    // Map category names to available icon files
+    final categoryIconMap = {
+      'electronics': 'electronics.png',
+      'mobile phones': 'mobile-tablet.png',
+      'phones': 'mobile-tablet.png',
+      'fashion': 'fashion.png',
+      'fashion & beauty': 'fashion.png',
+      'beauty': 'beauty-health.png',
+      'home': 'home-furniture.png',
+      'home & garden': 'home-furniture.png',
+      'furniture': 'home-furniture.png',
+      'vehicles': 'vehicles.png',
+      'cars': 'vehicles.png',
+      'services': 'services.png',
+      'property': 'property.png',
+      'real estate': 'property.png',
+      'babies': 'babies-kids.png',
+      'kids': 'babies-kids.png',
+      'baby': 'babies-kids.png',
+      'pets': 'pets-animals.png',
+      'animals': 'pets-animals.png',
+      'agriculture': 'agriculture-farming.png',
+      'farming': 'agriculture-farming.png',
+      'leisure': 'leisure-activities.png',
+      'activities': 'leisure-activities.png',
+      'sports': 'leisure-activities.png',
+      'commercial': 'commercial-equipment-tools.png',
+      'equipment': 'commercial-equipment-tools.png',
+      'tools': 'commercial-equipment-tools.png',
+      'repair': 'repair-construction.png',
+      'construction': 'repair-construction.png',
+      'work': 'seeking-work-cvs.png',
+      'jobs': 'seeking-work-cvs.png',
+      'cvs': 'seeking-work-cvs.png',
+    };
 
-  Widget _buildCategoryImage(String? iconName) {
-    if (iconName == null || iconName.isEmpty) {
-      return const Icon(Icons.category, color: Color(0xFF5BE206), size: 30);
+    // Get category name and try to find matching icon
+    final categoryName = (category['name'] ?? '').toString().toLowerCase();
+    String iconFileName = 'default.png';
+
+    // Try exact match first
+    if (categoryIconMap.containsKey(categoryName)) {
+      iconFileName = categoryIconMap[categoryName]!;
+    } else {
+      // Try partial matches
+      for (final key in categoryIconMap.keys) {
+        if (categoryName.contains(key) || key.contains(categoryName)) {
+          iconFileName = categoryIconMap[key]!;
+          break;
+        }
+      }
     }
 
-    // Remove file extension if present and ensure we have the right format
-    final cleanIconName = iconName
-        .replaceAll('.png', '')
-        .replaceAll('.jpg', '');
-    final assetPath = 'images/categories/$cleanIconName.png';
+    final assetPath = 'assets/images/categories/$iconFileName';
 
     return Image.asset(
       assetPath,
@@ -185,7 +249,19 @@ class _HomeScreenState extends State<HomeScreen> {
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         // Fallback to default icon if asset not found
-        return const Icon(Icons.category, color: Color(0xFF5BE206), size: 30);
+        return Image.asset(
+          'assets/images/categories/default.png',
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.category,
+              color: Color(0xFF5BE206),
+              size: 30,
+            );
+          },
+        );
       },
     );
   }
@@ -277,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: _buildCategoryImage(category['icon']),
+                            child: _buildCategoryImage(category),
                           ),
                         ),
                         const SizedBox(height: 8),
