@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import '../services/auth_service.dart';
 import '../services/google_auth_service.dart';
 import '../widgets/sokofiti_logo.dart';
-import '../screens/register_screen.dart';
+import '../widgets/register_modal.dart';
 import '../screens/terms_of_use_screen.dart';
 import '../screens/privacy_policy_screen.dart';
 import '../screens/listing_detail_screen.dart';
@@ -150,20 +150,27 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
 
   void _navigateToRegister() {
     Navigator.of(context).pop();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => RegisterScreen(
-          onRegistrationSuccess: _handleLoginSuccess,
-          redirectToListingId: widget.redirectToListingId,
-        ),
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => RegisterModal(
+        onRegistrationSuccess: _handleLoginSuccess,
+        redirectToListingId: widget.redirectToListingId,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: screenWidth > 600 ? 40 : 16,
+        vertical: screenHeight > 700 ? 40 : 20,
+      ),
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
@@ -172,8 +179,10 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
             child: Opacity(
               opacity: _fadeAnimation.value,
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 400),
-                margin: const EdgeInsets.all(20),
+                constraints: BoxConstraints(
+                  maxWidth: screenWidth > 600 ? 400 : screenWidth * 0.9,
+                  maxHeight: screenHeight * 0.85,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -186,7 +195,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                   ],
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -211,26 +220,26 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         showShadow: false,
                         useWhiteLogo: true,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       const Text(
                         'Welcome Back!',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF5BE206),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         'Sign in to continue',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
 
                       // Google Sign-In Button
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 46,
                         child: OutlinedButton.icon(
                           onPressed: _isGoogleLoading
                               ? null
@@ -267,19 +276,20 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Divider
                       Row(
                         children: [
                           Expanded(child: Divider(color: Colors.grey.shade300)),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               'or',
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.w500,
+                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -287,7 +297,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Login Form
                       Form(
@@ -322,7 +332,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             // Password field
                             TextFormField(
@@ -363,7 +373,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Terms and Privacy Policy
                       RichText(
@@ -414,12 +424,12 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Login Button
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 46,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
@@ -451,7 +461,7 @@ class _LoginModalState extends State<LoginModal> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Register link
                       Row(
