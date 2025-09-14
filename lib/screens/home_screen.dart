@@ -7,6 +7,7 @@ import '../widgets/plan_badge.dart';
 import '../widgets/ellipsis_loader.dart';
 import '../widgets/smart_search_widget.dart';
 import '../utils/image_utils.dart';
+import '../utils/asset_helper.dart';
 import '../config/api.dart';
 import 'listing_detail_screen.dart';
 import 'category_screen.dart';
@@ -36,6 +37,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _loadListings();
     _loadCategories();
     _startAutoRefresh();
+
+    // Debug category assets on first load
+    AssetHelper.debugCategoryAssets();
 
     FirebaseService.trackScreenView('home_screen');
   }
@@ -212,82 +216,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _onRefresh() async => _loadListings();
 
   Widget _buildCategoryImage(Map<String, dynamic> category) {
-    // Map category names to available icon files
-    final categoryIconMap = {
-      'electronics': 'electronics.png',
-      'mobile phones': 'mobile-tablet.png',
-      'phones': 'mobile-tablet.png',
-      'fashion': 'fashion.png',
-      'fashion & beauty': 'fashion.png',
-      'beauty': 'beauty-health.png',
-      'home': 'home-furniture.png',
-      'home & garden': 'home-furniture.png',
-      'furniture': 'home-furniture.png',
-      'vehicles': 'vehicles.png',
-      'cars': 'vehicles.png',
-      'services': 'services.png',
-      'property': 'property.png',
-      'real estate': 'property.png',
-      'babies': 'babies-kids.png',
-      'kids': 'babies-kids.png',
-      'baby': 'babies-kids.png',
-      'pets': 'pets-animals.png',
-      'animals': 'pets-animals.png',
-      'agriculture': 'agriculture-farming.png',
-      'farming': 'agriculture-farming.png',
-      'leisure': 'leisure-activities.png',
-      'activities': 'leisure-activities.png',
-      'sports': 'leisure-activities.png',
-      'commercial': 'commercial-equipment-tools.png',
-      'equipment': 'commercial-equipment-tools.png',
-      'tools': 'commercial-equipment-tools.png',
-      'repair': 'repair-construction.png',
-      'construction': 'repair-construction.png',
-      'work': 'seeking-work-cvs.png',
-      'jobs': 'seeking-work-cvs.png',
-      'cvs': 'seeking-work-cvs.png',
-    };
-
-    // Get category name and try to find matching icon
-    final categoryName = (category['name'] ?? '').toString().toLowerCase();
-    String iconFileName = 'default.png';
-
-    // Try exact match first
-    if (categoryIconMap.containsKey(categoryName)) {
-      iconFileName = categoryIconMap[categoryName]!;
-    } else {
-      // Try partial matches
-      for (final key in categoryIconMap.keys) {
-        if (categoryName.contains(key) || key.contains(categoryName)) {
-          iconFileName = categoryIconMap[key]!;
-          break;
-        }
-      }
-    }
-
-    final assetPath = 'assets/images/categories/$iconFileName';
-
-    return Image.asset(
-      assetPath,
+    return AssetHelper.getCategoryImage(
+      categoryName: category['name']?.toString(),
       width: 60,
       height: 60,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        // Fallback to default icon if asset not found
-        return Image.asset(
-          'assets/images/categories/default.png',
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(
-              Icons.category,
-              color: Color(0xFF5BE206),
-              size: 30,
-            );
-          },
-        );
-      },
+      borderRadius: BorderRadius.circular(12),
     );
   }
 

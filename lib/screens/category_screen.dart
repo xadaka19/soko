@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../services/firebase_service.dart';
 import '../utils/image_utils.dart';
 import '../widgets/ellipsis_loader.dart';
+import '../utils/asset_helper.dart';
 import '../config/api.dart';
 import 'listing_detail_screen.dart';
 
@@ -204,28 +205,12 @@ class _CategoryScreenState extends State<CategoryScreen>
   }
 
   Widget _buildSubcategoryImage(String? iconName) {
-    if (iconName == null || iconName.isEmpty) {
-      return const Icon(Icons.category, color: Color(0xFF5BE206), size: 30);
-    }
-
-    // Remove file extension if present and ensure we have the right format
-    final cleanIconName = iconName
-        .replaceAll('.png', '')
-        .replaceAll('.jpg', '');
-    final assetPath = 'assets/images/categories/$cleanIconName.png';
-
-    return ClipRRect(
+    return AssetHelper.getCategoryImage(
+      categoryName: iconName,
+      width: 60,
+      height: 60,
+      fit: BoxFit.cover,
       borderRadius: BorderRadius.circular(12),
-      child: Image.asset(
-        assetPath,
-        width: 60,
-        height: 60,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to default icon if asset not found
-          return const Icon(Icons.category, color: Color(0xFF5BE206), size: 30);
-        },
-      ),
     );
   }
 
