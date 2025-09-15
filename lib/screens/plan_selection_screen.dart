@@ -1,8 +1,37 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../config/api.dart';
 import 'payment_screen.dart';
+
+class Plan {
+  final dynamic id;
+  final String name;
+  final String price;
+  final String period;
+  final List<String> features;
+  final String type;
+
+  Plan({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.period,
+    required this.features,
+    required this.type,
+  });
+
+  factory Plan.fromJson(Map<String, dynamic> json) {
+    return Plan(
+      id: json['id'],
+      name: json['name'] ?? '',
+      price: json['price'] ?? '',
+      period: json['period'] ?? '',
+      features: List<String>.from(json['features'] ?? []),
+      type: json['type'] ?? json['name']?.toString().toLowerCase() ?? '',
+    );
+  }
+}
 
 class PlanSelectionScreen extends StatefulWidget {
   const PlanSelectionScreen({super.key});
@@ -12,23 +41,16 @@ class PlanSelectionScreen extends StatefulWidget {
 }
 
 class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
-  List<Map<String, dynamic>> _plans = [];
-  bool _isLoading = true;
-  String? _errorMessage;
+  late Future<List<Plan>> _plansFuture;
 
   @override
   void initState() {
     super.initState();
-    _loadPlans();
+    _plansFuture = _fetchPlans();
   }
 
-  Future<void> _loadPlans() async {
+  Future<List<Plan>> _fetchPlans() async {
     try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
       final response = await http
           .get(
             Uri.parse('${Api.baseUrl}${Api.getPlansEndpoint}'),
@@ -37,135 +59,104 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           .timeout(Api.timeout);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success']) {
-          setState(() {
-            _plans = List<Map<String, dynamic>>.from(data['plans']);
-            _isLoading = false;
-          });
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final List plansJson = data['plans'];
+          return plansJson.map((plan) => Plan.fromJson(plan)).toList();
         } else {
           throw Exception(data['message'] ?? 'Failed to load plans');
         }
       } else {
-        throw Exception('Server error: ${response.statusCode}');
+        throw Exception('Failed to fetch plans: ${response.statusCode}');
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
-
-      // Fallback to default plans if API fails
-      _loadDefaultPlans();
+      // Return default plans if API fails
+      return _getDefaultPlans();
     }
   }
 
-  void _loadDefaultPlans() {
-    setState(() {
-      _plans = [
-        {
-          'id': 'free',
-          'name': 'FREE PLAN',
-          'price': 'KES 0',
-          'period': '',
-          'color': Colors.blue,
-          'features': ['Ads auto-renew Every 48 hours', '7 free credits(ads)'],
-        },
-        {
-          'id': 'top',
-          'name': 'TOP',
-          'price': 'KES 250',
-          'period': '',
-          'color': Colors.blue,
-          'features': [
-            '7 days listing',
-            '1 credit (ad)',
-            'Ads auto-renew Every 24 hours',
-          ],
-        },
-        {
-          'id': 'top_featured',
-          'name': 'TOP FEATURED',
-          'price': 'KES 400',
-          'period': '/ month',
-          'color': Colors.blue,
-          'features': ['1 credit (ad)', 'Ads auto-renew Every 16 hours'],
-        },
-        {
-          'id': 'starter',
-          'name': 'STARTER',
-          'price': 'KES 3,000',
-          'period': '/ month',
-          'color': Colors.blue,
-          'features': ['10 credits (ads)', 'Ads auto-renew Every 12 hours'],
-        },
-        {
-          'id': 'basic',
-          'name': 'BASIC',
-          'price': 'KES 5,000',
-          'period': '/ month',
-          'color': Colors.blue,
-          'features': ['27 credits (ads)', 'Ads auto-renew Every 10 hours'],
-        },
-        {
-          'id': 'premium',
-          'name': 'PREMIUM',
-          'price': 'KES 7,000',
-          'period': '/ month',
-          'color': Colors.blue,
-          'features': ['45 credits (ads)', 'Ads auto-renew Every 8 hours'],
-        },
-        {
-          'id': 'business',
-          'name': 'BUSINESS',
-          'price': 'KES 10,000',
-          'period': '/ month',
-          'color': Colors.blue,
-          'features': ['74 credits (ads)', 'Ads auto-renew Every 6 hours'],
-        },
-      ];
-    });
+  List<Plan> _getDefaultPlans() {
+    return [
+      Plan(
+        id: 'free',
+        name: 'FREE PLAN',
+        price: 'KES 0',
+        period: '',
+        features: ['Ads auto-renew Every 48 hours', '7 free credits(ads)'],
+        type: 'free',
+      ),
+      Plan(
+        id: 'top',
+        name: 'TOP',
+        price: 'KES 250',
+        period: '',
+        features: [
+          '7 days listing',
+          '1 credit (ad)',
+          'Ads auto-renew Every 24 hours',
+        ],
+        type: 'top',
+      ),
+      Plan(
+        id: 'top_featured',
+        name: 'TOP FEATURED',
+        price: 'KES 400',
+        period: '/ month',
+        features: ['1 credit (ad)', 'Ads auto-renew Every 16 hours'],
+        type: 'featured',
+      ),
+      Plan(
+        id: 'starter',
+        name: 'STARTER',
+        price: 'KES 3,000',
+        period: '/ month',
+        features: ['10 credits (ads)', 'Ads auto-renew Every 12 hours'],
+        type: 'starter',
+      ),
+      Plan(
+        id: 'basic',
+        name: 'BASIC',
+        price: 'KES 5,000',
+        period: '/ month',
+        features: ['27 credits (ads)', 'Ads auto-renew Every 10 hours'],
+        type: 'basic',
+      ),
+      Plan(
+        id: 'premium',
+        name: 'PREMIUM',
+        price: 'KES 7,000',
+        period: '/ month',
+        features: ['45 credits (ads)', 'Ads auto-renew Every 8 hours'],
+        type: 'premium',
+      ),
+      Plan(
+        id: 'business',
+        name: 'BUSINESS',
+        price: 'KES 10,000',
+        period: '/ month',
+        features: ['74 credits (ads)', 'Ads auto-renew Every 6 hours'],
+        type: 'business',
+      ),
+    ];
   }
 
-  void _selectPlan(String planId) {
-    // Find the selected plan details
-    final selectedPlan = _plans.firstWhere(
-      (plan) => plan['id'] == planId,
-      orElse: () => {},
+  void _selectPlan(Plan plan) {
+    // Convert Plan to Map for PaymentScreen compatibility
+    final planMap = {
+      'id': plan.id,
+      'name': plan.name,
+      'price': plan.price,
+      'period': plan.period,
+      'features': plan.features,
+      'type': plan.type,
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(selectedPlan: planMap),
+      ),
     );
-
-    if (selectedPlan.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Plan not found. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Check if it's a free plan
-    String priceStr = selectedPlan['price'].toString();
-    String numStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
-    double amount = double.tryParse(numStr) ?? 0.0;
-
-    if (amount == 0) {
-      // Free plan - skip payment and go directly to create listing
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentScreen(selectedPlan: selectedPlan),
-        ),
-      );
-    } else {
-      // Paid plan - go to payment screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentScreen(selectedPlan: selectedPlan),
-        ),
-      );
-    }
   }
 
   @override
@@ -177,36 +168,40 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      backgroundColor: Colors.grey[100],
-      body: _isLoading
-          ? const Center(
+      body: FutureBuilder<List<Plan>>(
+        future: _plansFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
               ),
-            )
-          : _errorMessage != null
-          ? Center(
+            );
+          } else if (snapshot.hasError) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load plans',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
-                    ),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Using default plans',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
-                    onPressed: _loadPlans,
+                    onPressed: () {
+                      setState(() {
+                        _plansFuture = _fetchPlans();
+                      });
+                    },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
                     style: ElevatedButton.styleFrom(
@@ -216,50 +211,65 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                   ),
                 ],
               ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Refresh button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton.icon(
-                        onPressed: _loadPlans,
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Refresh Plans'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Plans grid
-                  Expanded(
-                    child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.75,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                      itemCount: _plans.length,
-                      itemBuilder: (context, index) {
-                        final plan = _plans[index];
-                        return _buildPlanCard(plan);
+            );
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No plans available'));
+          }
+
+          final plans = snapshot.data!;
+
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Refresh button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _plansFuture = _fetchPlans();
+                        });
                       },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Refresh Plans'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.green,
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Plans grid
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                    itemCount: plans.length,
+                    itemBuilder: (context, index) {
+                      final plan = plans[index];
+                      return _buildPlanCard(plan);
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildPlanCard(Map<String, dynamic> plan) {
+  Widget _buildPlanCard(Plan plan) {
+    // Highlight featured plans
+    final isFeatured = plan.type.contains('feat');
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -268,6 +278,9 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: Colors.white,
+          border: isFeatured
+              ? Border.all(color: Colors.deepPurple, width: 2)
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,11 +289,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: plan['color'],
+                color: isFeatured ? Colors.deepPurple : Colors.blue,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                plan['name'],
+                plan.name,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -296,17 +309,17 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  plan['price'],
+                  plan.price,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
-                if (plan['period'].isNotEmpty) ...[
+                if (plan.period.isNotEmpty) ...[
                   const SizedBox(width: 4),
                   Text(
-                    plan['period'],
+                    plan.period,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
@@ -319,7 +332,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: plan['features'].map<Widget>((feature) {
+                children: plan.features.map<Widget>((feature) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
@@ -328,7 +341,9 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                         Icon(
                           Icons.check_circle,
                           size: 16,
-                          color: Colors.green[600],
+                          color: isFeatured
+                              ? Colors.deepPurple
+                              : Colors.green[600],
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -354,9 +369,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _selectPlan(plan['id']),
+                onPressed: () => _selectPlan(plan),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: isFeatured
+                      ? Colors.deepPurple
+                      : Colors.green,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(

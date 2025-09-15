@@ -19,10 +19,18 @@ class Environment {
   static bool get isStaging => environment == 'staging';
 
   // API Configuration
-  static const String apiBaseUrl = String.fromEnvironment(
+  static const String _apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://sokofiti.ke',
+    defaultValue: '',
   );
+
+  static String get apiBaseUrl {
+    if (_apiBaseUrl.isNotEmpty) {
+      return _apiBaseUrl;
+    }
+    // Production configuration - using live Sokofiti server
+    return 'https://sokofiti.ke';
+  }
 
   // M-Pesa Configuration
   static const String mpesaHmacSecret = String.fromEnvironment(

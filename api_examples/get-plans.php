@@ -10,17 +10,26 @@
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 try {
+    // For testing purposes, use sample data instead of database
+    // In production, uncomment the database code below
+
+    /*
     // Database connection (adjust according to your setup)
     $pdo = new PDO("mysql:host=localhost;dbname=sokofiti", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
+
     // Fetch all active plans from database
     $stmt = $pdo->prepare("
-        SELECT 
+        SELECT
             id,
             name,
             price,
@@ -30,13 +39,45 @@ try {
             sort_order,
             created_at,
             updated_at
-        FROM subscription_plans 
-        WHERE is_active = 1 
+        FROM subscription_plans
+        WHERE is_active = 1
         ORDER BY sort_order ASC, price ASC
     ");
-    
+
     $stmt->execute();
     $plans = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    */
+
+    // Sample plans data for testing
+    $plans = [
+        [
+            'id' => 1,
+            'name' => 'free',
+            'price' => 0,
+            'period' => 'forever',
+            'features' => json_encode(['5 listings', 'Basic support', 'Standard visibility']),
+            'is_active' => 1,
+            'sort_order' => 1
+        ],
+        [
+            'id' => 2,
+            'name' => 'basic',
+            'price' => 500,
+            'period' => 'month',
+            'features' => json_encode(['20 listings', 'Priority support', 'Enhanced visibility', 'Featured badge']),
+            'is_active' => 1,
+            'sort_order' => 2
+        ],
+        [
+            'id' => 3,
+            'name' => 'premium',
+            'price' => 1500,
+            'period' => 'month',
+            'features' => json_encode(['Unlimited listings', 'Premium support', 'Maximum visibility', 'Featured badge', 'Top placement']),
+            'is_active' => 1,
+            'sort_order' => 3
+        ]
+    ];
     
     // Format plans for mobile app
     $formattedPlans = [];
@@ -48,6 +89,7 @@ try {
             'period' => $plan['period'] ? '/ ' . $plan['period'] : '',
             'color' => '#2196F3', // Blue color (can be customized per plan)
             'features' => json_decode($plan['features'], true) ?: [],
+            'type' => strtolower($plan['name']), // Add type field for featured plan detection
         ];
     }
     
