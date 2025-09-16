@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "288767792538-iivnodkv2f83mrdhbdrortg3de8bsitk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sokofiti.app",
+            "certificate_hash": "7b6099242ae31f3eaf7210fe0ab91e625aa5f821"
+          }
+        },
+        {
           "client_id": "288767792538-5p2tlebpnbig2593tiel6be5qdnmssop.apps.googleusercontent.com",
           "client_type": 3
         }
