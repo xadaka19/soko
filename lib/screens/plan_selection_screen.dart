@@ -70,74 +70,9 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         throw Exception('Failed to fetch plans: ${response.statusCode}');
       }
     } catch (e) {
-      // Return default plans if API fails
-      return _getDefaultPlans();
+      // Throw error instead of using fallback plans to ensure live data only
+      throw Exception('Failed to load plans: $e');
     }
-  }
-
-  List<Plan> _getDefaultPlans() {
-    return [
-      Plan(
-        id: 'free',
-        name: 'FREE PLAN',
-        price: 'KES 0',
-        period: '',
-        features: ['Ads auto-renew Every 48 hours', '7 free credits(ads)'],
-        type: 'free',
-      ),
-      Plan(
-        id: 'top',
-        name: 'TOP',
-        price: 'KES 250',
-        period: '',
-        features: [
-          '7 days listing',
-          '1 credit (ad)',
-          'Ads auto-renew Every 24 hours',
-        ],
-        type: 'top',
-      ),
-      Plan(
-        id: 'top_featured',
-        name: 'TOP FEATURED',
-        price: 'KES 400',
-        period: '/ month',
-        features: ['1 credit (ad)', 'Ads auto-renew Every 16 hours'],
-        type: 'featured',
-      ),
-      Plan(
-        id: 'starter',
-        name: 'STARTER',
-        price: 'KES 3,000',
-        period: '/ month',
-        features: ['10 credits (ads)', 'Ads auto-renew Every 12 hours'],
-        type: 'starter',
-      ),
-      Plan(
-        id: 'basic',
-        name: 'BASIC',
-        price: 'KES 5,000',
-        period: '/ month',
-        features: ['27 credits (ads)', 'Ads auto-renew Every 10 hours'],
-        type: 'basic',
-      ),
-      Plan(
-        id: 'premium',
-        name: 'PREMIUM',
-        price: 'KES 7,000',
-        period: '/ month',
-        features: ['45 credits (ads)', 'Ads auto-renew Every 8 hours'],
-        type: 'premium',
-      ),
-      Plan(
-        id: 'business',
-        name: 'BUSINESS',
-        price: 'KES 10,000',
-        period: '/ month',
-        features: ['74 credits (ads)', 'Ads auto-renew Every 6 hours'],
-        type: 'business',
-      ),
-    ];
   }
 
   void _selectPlan(Plan plan) {

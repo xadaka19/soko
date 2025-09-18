@@ -190,7 +190,7 @@ class MpesaService {
 
       final response = await http
           .post(
-            Uri.parse('${Api.baseUrl}/api/mpesa/stk-push.php'),
+            Uri.parse('${Api.baseUrl}/api/stk-push.php'),
             headers: secureHeaders,
             body: jsonEncode(requestData),
           )
@@ -342,31 +342,6 @@ class MpesaService {
     }
 
     return cleaned;
-  }
-
-  /// Get transaction fee for amount
-  static double getTransactionFee(double amount) {
-    // M-Pesa transaction fees (approximate)
-    if (amount <= 100) return 0;
-    if (amount <= 500) return 5;
-    if (amount <= 1000) return 10;
-    if (amount <= 1500) return 15;
-    if (amount <= 2500) return 20;
-    if (amount <= 3500) return 25;
-    if (amount <= 5000) return 30;
-    if (amount <= 7500) return 35;
-    if (amount <= 10000) return 40;
-    if (amount <= 15000) return 45;
-    if (amount <= 20000) return 50;
-    if (amount <= 35000) return 55;
-    if (amount <= 50000) return 60;
-    return 65; // For amounts above 50,000
-  }
-
-  /// Calculate total amount including fees
-  static double calculateTotalAmount(double planAmount) {
-    double fee = getTransactionFee(planAmount);
-    return planAmount + fee;
   }
 
   /// Save phone number to user session for future use

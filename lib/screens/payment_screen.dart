@@ -166,8 +166,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return double.tryParse(numStr) ?? 0.0;
   }
 
-  double get _transactionFee => MpesaService.getTransactionFee(_planAmount);
-  double get _totalAmount => _planAmount + _transactionFee;
+  double get _totalAmount => _planAmount;
 
   Future<void> _initiatePayment() async {
     if (!_formKey.currentState!.validate()) return;
@@ -538,24 +537,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Plan Amount:'),
-                          Text('KES ${_planAmount.toStringAsFixed(0)}'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Transaction Fee:'),
-                          Text('KES ${_transactionFee.toStringAsFixed(0)}'),
-                        ],
-                      ),
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
                           const Text(
-                            'Total Amount:',
+                            'Amount:',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(

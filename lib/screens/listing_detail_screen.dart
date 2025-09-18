@@ -1552,44 +1552,6 @@ https://sokofiti.ke/listing/$listingId''';
             ],
           ),
         ],
-
-        const SizedBox(height: 24),
-
-        // Moderation Actions
-        if (_currentUser != null) ...[
-          const Text(
-            'Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _markUnavailable(listing),
-                  icon: const Icon(Icons.visibility_off, size: 18),
-                  label: const Text('Mark Unavailable'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: const BorderSide(color: Colors.orange),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _reportAbuse(listing),
-                  icon: const Icon(Icons.report, size: 18),
-                  label: const Text('Report Abuse'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ],
     );
   }
