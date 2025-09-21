@@ -1,13 +1,12 @@
-I have downloaded the apk release and i have afew issues on installed app 
-1) the homepage categories dont have icons/image; 
-2) the listings are not live like in web and dont have photos and when you click a listing it 
-3) the login/register form does not have a good UI as attached could we change it to something beautiful and less filling the screen;
-4) signing is not working   says sign in failed )
-5) in search bar the smart search runs ellipses but does not populate anything and when say you search for toyota harrier it brings all listings in the app as opposed to specific search you want
+when a user makes a payment it says payment failed   please try again, in my backend when I curl -X POST https://sokofiti.ke/api/stk-push.php \
+> -H "Content-Type: application/json" \
+> -d '{
+>   "token": "de793fee5ad11c78141750e51979eba8",
+>   "plan_id": 23,
+>   "phone_number": "254712345678",
+>   "amount": 100,
+>   "account_reference": "Starter Plan",
+>   "transaction_desc": "Purchase Starter Plan"
+> }'it responds as below 
 
-
-
-7) check if app is using image resizer
-8) the search bar when you search an item it does not show any results, also check whether the smart search is working 
-
-clear all problems 
+{"success":true,"message":"STK Push sent successfully","checkout_request_id":"ws_CO_21092025131154822712345678","merchant_request_id":"9fc3-46db-a876-117f9e1c566e995090","response_code":"0","response_description":"Success. Request accepted for processing","customer_message":"Success. Request accepted for processing"}[root@srv915617 ~]# 

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart';
@@ -21,14 +20,7 @@ class MpesaService {
   static final Set<String> _bannedIPs = {};
   static final Map<String, DateTime> _banTimestamps = {};
 
-  /// Generate CSRF token
-  static String _generateCSRFToken() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(32, (i) => random.nextInt(256));
-    return base64Url.encode(bytes);
-  }
-
-  /// Generate HMAC signature
+  /// Generate HMAC signature (kept for callback validation)
   static String _generateHMACSignature(String data) {
     final key = utf8.encode(_hmacSecret);
     final bytes = utf8.encode(data);
@@ -138,9 +130,20 @@ class MpesaService {
     required String accountReference,
   }) async {
     try {
+      // Get user token from session
+      final user = await SessionManager.getUser();
+      final token = await SessionManager.getToken();
+
+      if (user == null || token == null) {
+        return {
+          'success': false,
+          'message': 'User not authenticated. Please login again.',
+          'error_code': 'AUTH_REQUIRED',
+        };
+      }
+
       // Get device fingerprint for security
       final deviceFingerprint = await _getDeviceFingerprint();
-      final userAgent = 'SokoFiti-Mobile/1.0';
 
       // Check rate limiting
       if (!_checkRateLimit(phoneNumber)) {
@@ -160,41 +163,32 @@ class MpesaService {
         };
       }
 
-      // Generate CSRF token
-      final csrfToken = _generateCSRFToken();
-
-      // Prepare request data
+      // Prepare request data in the format expected by backend
       final requestData = {
-        'phone_number': phoneNumber,
-        'amount': amount,
+        'token': token,
         'plan_id': planId,
-        'user_id': userId,
+        'phone_number': phoneNumber,
+        'amount': amount.toInt(), // Backend expects integer
+        'user_id': userId, // Add missing user_id field
         'account_reference': accountReference,
-        'transaction_desc': 'Payment for $planId plan',
-        'device_fingerprint': deviceFingerprint,
-        'csrf_token': csrfToken,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'transaction_desc': 'Payment for $accountReference',
       };
 
-      // Generate HMAC signature
-      final signature = _generateHMACSignature(jsonEncode(requestData));
-
-      // Enhanced headers with security
-      final secureHeaders = {
-        ...Api.headers,
-        'X-HMAC-Signature': signature,
-        'X-CSRF-Token': csrfToken,
-        'X-Device-Fingerprint': deviceFingerprint,
-        'User-Agent': userAgent,
-      };
+      debugPrint('STK Push request data: $requestData');
+      debugPrint('STK Push URL: ${Api.baseUrl}/api/stk-push.php');
+      debugPrint('STK Push headers: ${Api.headers}');
 
       final response = await http
           .post(
             Uri.parse('${Api.baseUrl}/api/stk-push.php'),
-            headers: secureHeaders,
+            headers: {'Content-Type': 'application/json'},
             body: jsonEncode(requestData),
           )
           .timeout(Api.timeout);
+
+      debugPrint('STK Push response status: ${response.statusCode}');
+      debugPrint('STK Push response headers: ${response.headers}');
+      debugPrint('STK Push response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -207,11 +201,13 @@ class MpesaService {
 
         return {
           'success': success,
-          'message': data['message'] ?? 'Unknown error',
+          'message':
+              data['customer_message'] ?? data['message'] ?? 'Unknown error',
           'checkout_request_id': data['checkout_request_id'],
           'merchant_request_id': data['merchant_request_id'],
           'response_code': data['response_code'],
           'response_description': data['response_description'],
+          'customer_message': data['customer_message'],
         };
       } else {
         // Record failed attempt for security monitoring
@@ -219,7 +215,7 @@ class MpesaService {
 
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}',
+          'message': 'Server error: ${response.statusCode} - ${response.body}',
           'error_code': 'SERVER_ERROR',
         };
       }
@@ -232,7 +228,7 @@ class MpesaService {
 
       return {
         'success': false,
-        'message': 'Payment failed: Network error',
+        'message': 'Payment failed: Network error - $e',
         'error_code': 'NETWORK_ERROR',
       };
     }
