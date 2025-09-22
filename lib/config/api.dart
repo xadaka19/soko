@@ -51,8 +51,8 @@ class Api {
   static String get reviewCommentsEndpoint =>
       _baseUrlHasApi ? '/review-comments.php' : '/api/review-comments.php';
   static String get uploadProfilePictureEndpoint => _baseUrlHasApi
-      ? '/upload-profile-picture.php'
-      : '/api/upload-profile-picture.php';
+      ? '/update-profile-picture.php'
+      : '/api/update-profile-picture.php';
   static String get getSellerListingsEndpoint => _baseUrlHasApi
       ? '/get-seller-listings.php'
       : '/api/get-seller-listings.php';

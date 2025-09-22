@@ -265,8 +265,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         Uri.parse('${Api.baseUrl}${Api.uploadProfilePictureEndpoint}'),
       );
 
-      // Add headers
-      request.headers.addAll(Api.headers);
+      // Don't add JSON headers for multipart requests
+      // The multipart boundary will be set automatically
 
       // Add user ID
       request.fields['user_id'] = _user!['id'].toString();

@@ -131,16 +131,27 @@ class MpesaService {
   }) async {
     try {
       // Get user token from session
-      final user = await SessionManager.getUser();
       final token = await SessionManager.getToken();
-
-      if (user == null || token == null) {
+      if (token == null || token.isEmpty) {
+        debugPrint('STK Push error: Token missing or invalid');
         return {
           'success': false,
           'message': 'User not authenticated. Please login again.',
-          'error_code': 'AUTH_REQUIRED',
         };
       }
+
+      // Format phone number
+      final formattedPhone = formatPhoneNumber(phoneNumber);
+
+      // Convert plan_id to int
+      final intPlanId = int.tryParse(planId) ?? 0;
+      if (intPlanId == 0) {
+        debugPrint('STK Push error: Invalid planId = $planId');
+        return {'success': false, 'message': 'Invalid plan selected.'};
+      }
+
+      // Ensure amount is integer
+      final intAmount = amount.toInt();
 
       // Get device fingerprint for security
       final deviceFingerprint = await _getDeviceFingerprint();
@@ -163,73 +174,57 @@ class MpesaService {
         };
       }
 
-      // Prepare request data in the format expected by backend
+      // Prepare request payload
       final requestData = {
         'token': token,
-        'plan_id': planId,
-        'phone_number': phoneNumber,
-        'amount': amount.toInt(), // Backend expects integer
-        'user_id': userId, // Add missing user_id field
+        'plan_id': intPlanId,
+        'phone_number': formattedPhone,
+        'amount': intAmount,
+        'user_id': userId,
         'account_reference': accountReference,
         'transaction_desc': 'Payment for $accountReference',
       };
 
-      debugPrint('STK Push request data: $requestData');
       debugPrint('STK Push URL: ${Api.baseUrl}/api/stk-push.php');
-      debugPrint('STK Push headers: ${Api.headers}');
+      debugPrint('STK Push request data: ${jsonEncode(requestData)}');
 
-      final response = await http
-          .post(
-            Uri.parse('${Api.baseUrl}/api/stk-push.php'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(requestData),
-          )
-          .timeout(Api.timeout);
+      // Send request to backend
+      final response = await http.post(
+        Uri.parse('${Api.baseUrl}/api/stk-push.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestData),
+      );
 
       debugPrint('STK Push response status: ${response.statusCode}');
-      debugPrint('STK Push response headers: ${response.headers}');
-      debugPrint('STK Push response body: ${response.body}');
+      debugPrint('STK Push raw response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final success = data['success'] ?? false;
-
-        if (!success) {
-          // Record failed attempt for security monitoring
-          _recordFailedAttempt(deviceFingerprint);
-        }
 
         return {
-          'success': success,
+          'success': data['success'] ?? false,
           'message':
-              data['customer_message'] ?? data['message'] ?? 'Unknown error',
+              data['customer_message'] ?? data['message'] ?? 'Payment failed',
           'checkout_request_id': data['checkout_request_id'],
           'merchant_request_id': data['merchant_request_id'],
           'response_code': data['response_code'],
           'response_description': data['response_description'],
-          'customer_message': data['customer_message'],
+          'raw_response': data, // include full backend response for debugging
         };
       } else {
-        // Record failed attempt for security monitoring
-        _recordFailedAttempt(deviceFingerprint);
-
+        debugPrint('STK Push error: Server returned ${response.statusCode}');
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode} - ${response.body}',
-          'error_code': 'SERVER_ERROR',
+          'message': 'Server error: ${response.statusCode}',
+          'raw_response': response.body,
         };
       }
     } catch (e) {
-      debugPrint('M-Pesa payment error: $e');
-
-      // Record failed attempt for security monitoring
-      final deviceFingerprint = await _getDeviceFingerprint();
-      _recordFailedAttempt(deviceFingerprint);
-
+      debugPrint('STK Push exception: $e');
       return {
         'success': false,
-        'message': 'Payment failed: Network error - $e',
-        'error_code': 'NETWORK_ERROR',
+        'message': 'Payment failed: Network error',
+        'error': e.toString(),
       };
     }
   }
